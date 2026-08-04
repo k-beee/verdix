@@ -9,24 +9,126 @@ import {
   openCaseTx, pollTransaction, ratifyDeliveryTx, submitDeliverableTx,
 } from '@/lib/contract'
 
-// ─── Simple wallet hook using genlayer-js account injection ──────────────────
+// ─── Wallet hook — MetaMask first, private-key fallback ───────────────────────
 function useWallet() {
-  const [account, setAccount] = useState<`0x${string}` | null>(null)
+  const [account, setAccount]           = useState<`0x${string}` | null>(null)
+  const [showPkModal, setShowPkModal]   = useState(false)
 
-  const connect = useCallback(async () => {
+  const connectMetaMask = useCallback(async (): Promise<boolean> => {
+    const eth = (window as unknown as { ethereum?: { request: (a: {method:string}) => Promise<string[]> } }).ethereum
+    if (!eth) return false
     try {
-      if (typeof window === 'undefined') return
-      const { createClient } = await import('genlayer-js')
-      const { testnetBradbury } = await import('genlayer-js/chains')
-      const c = createClient({ chain: testnetBradbury })
-      const accounts = await (c as unknown as { requestAccounts?: () => Promise<string[]> }).requestAccounts?.() ?? []
-      if (accounts[0]) setAccount(accounts[0] as `0x${string}`)
+      const accounts = await eth.request({ method: 'eth_requestAccounts' })
+      if (accounts[0]) { setAccount(accounts[0] as `0x${string}`); return true }
+    } catch { /* user rejected */ }
+    return false
+  }, [])
+
+  const connectWithKey = useCallback((pk: string) => {
+    try {
+      // derive address from private key via genlayer-js createAccount
+      import('genlayer-js').then(({ createAccount }) => {
+        const normalized = pk.startsWith('0x') ? pk : `0x${pk}`
+        const acc = createAccount(normalized as `0x${string}`)
+        setAccount(acc.address as `0x${string}`)
+        setShowPkModal(false)
+      })
     } catch {
-      addToast('error', 'Could not connect wallet. Make sure MetaMask or a GenLayer-compatible wallet is installed.')
+      addToast('error', 'Invalid private key.')
     }
   }, [])
 
-  return { account, connect, signerClient: account ? makeSignerClient(account) : null }
+  const connect = useCallback(async () => {
+    if (typeof window === 'undefined') return
+    const ok = await connectMetaMask()
+    if (!ok) setShowPkModal(true)   // no MetaMask — show key modal
+  }, [connectMetaMask])
+
+  const disconnect = useCallback(() => setAccount(null), [])
+
+  return {
+    account, connect, disconnect,
+    showPkModal, setShowPkModal, connectWithKey,
+    signerClient: account ? makeSignerClient(account) : null,
+  }
+}
+
+// ─── Private-key connect modal ────────────────────────────────────────────────
+function WalletModal({ onClose, onConnect }: {
+  onClose: () => void
+  onConnect: (pk: string) => void
+}) {
+  const [pk, setPk] = useState('')
+  const [show, setShow] = useState(false)
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!pk.trim()) return
+    onConnect(pk.trim())
+  }
+
+  return (
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal-card">
+        <div className="modal-header">
+          <div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.2em', color: 'var(--gold-400)', textTransform: 'uppercase', marginBottom: 6 }}>
+              Testnet Wallet
+            </div>
+            <h2 className="modal-title">Connect Wallet</h2>
+          </div>
+          <button className="modal-close" onClick={onClose}>✕</button>
+        </div>
+        <div className="modal-body">
+          <p style={{ fontSize: 12.5, color: 'var(--slate-400)', lineHeight: 1.7, marginBottom: 20 }}>
+            No MetaMask detected. Enter your Bradbury testnet private key to continue.
+            Your key is never stored — it lives only in memory for this session.
+          </p>
+          <form onSubmit={handleSubmit}>
+            <div className="form-field">
+              <label className="form-label">Private Key</label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  className="form-input"
+                  type={show ? 'text' : 'password'}
+                  placeholder="0x..."
+                  value={pk}
+                  onChange={e => setPk(e.target.value)}
+                  required
+                  style={{ paddingRight: 48 }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShow(s => !s)}
+                  style={{
+                    position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
+                    background: 'none', border: 'none', color: 'var(--slate-500)', cursor: 'pointer',
+                    fontSize: 12, fontFamily: 'var(--font-mono)'
+                  }}
+                >{show ? 'hide' : 'show'}</button>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
+              <button type="submit" className="btn btn-gold btn-lg" style={{ flex: 1 }}
+                disabled={!pk.trim()}>
+                ⬡ Connect
+              </button>
+              <a className="btn btn-ghost btn-lg" href="https://testnet-faucet.genlayer.foundation/"
+                target="_blank" rel="noreferrer">
+                Get Test GEN ↗
+              </a>
+            </div>
+          </form>
+          <div style={{ marginTop: 20, padding: '12px 14px', background: 'rgba(212,164,58,0.05)', border: '1px solid rgba(212,164,58,0.15)', borderRadius: 8 }}>
+            <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--slate-500)', lineHeight: 1.6 }}>
+              ℹ This is a Bradbury testnet app. Only use testnet keys with no real value.
+              For MetaMask, add the Bradbury network and connect normally.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 // ─── Toast store ──────────────────────────────────────────────────────────────
@@ -561,7 +663,7 @@ const ALL_FILTERS = ['ALL', 'ACTIVE', 'DELIVERED', 'CONTESTED', 'RESOLVED', 'MY 
 type Filter = typeof ALL_FILTERS[number]
 
 export default function HomePage() {
-  const { account, connect, signerClient } = useWallet()
+  const { account, connect, disconnect, showPkModal, setShowPkModal, connectWithKey, signerClient } = useWallet()
   const [toasts, setToasts]     = useState<Toast[]>([])
   const [docket, setDocket]     = useState<CourtDocket>({ total_filed: 0, open_disputes: 0, closed_cases: 0 })
   const [cases, setCases]       = useState<VerdixCase[]>([])
@@ -641,6 +743,10 @@ export default function HomePage() {
                 <span className="wallet-dot" />
                 {fmt(account)}
               </div>
+              <button className="btn btn-ghost btn-sm" onClick={disconnect}
+                style={{ color: 'var(--slate-500)' }}>
+                Disconnect
+              </button>
               <button className="btn btn-gold" onClick={() => setShowModal(true)}>
                 + Open Case
               </button>
@@ -796,6 +902,14 @@ export default function HomePage() {
         />
       )}
       {showModal && !account && (() => { connect(); setShowModal(false); return null })()}
+
+      {/* Wallet private-key modal */}
+      {showPkModal && (
+        <WalletModal
+          onClose={() => setShowPkModal(false)}
+          onConnect={connectWithKey}
+        />
+      )}
 
       {/* Toasts */}
       <div className="toast-root">
