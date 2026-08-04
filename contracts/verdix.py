@@ -691,6 +691,29 @@ Respond with ONLY valid JSON matching this exact schema:
         return results
 
     @gl.public.view
+    def get_active_disputes(self, limit: u256) -> list:
+        """
+        Return the most recent CONTESTED cases up to `limit` entries.
+
+        This is a focused read optimised for a "Live Disputes" widget on
+        the dashboard — rather than filtering client-side after loading the
+        full registry, the contract does the scan server-side and returns
+        only the cases that need attention.
+        """
+        page_limit = int(limit) if int(limit) > 0 else 5
+        total      = len(self.case_index)
+        cursor     = total - 1
+        results    = []
+
+        while cursor >= 0 and len(results) < page_limit:
+            record = json.loads(self.registry[self.case_index[cursor]])
+            if record["status"] == "CONTESTED":
+                results.append(record)
+            cursor -= 1
+
+        return results
+
+    @gl.public.view
     def get_docket(self) -> dict:
         """
         Return high-level court statistics for the dashboard header.
