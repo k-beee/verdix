@@ -286,7 +286,7 @@ gltest tests/integration/ -v -s
 The contract source can be verified against the deployed bytecode via:
 
 ```
-https://explorer-bradbury.genlayer.com/address/<CONTRACT_ADDRESS>
+https://explorer-bradbury.genlayer.com/address/0xe233eFD3080e14773D61C65A5faeA475A50741E8
 ```
 
 GenVM dependency pinned at commit hash: `1jb45aa8ynh2a9c9xn3b7qqh8sm5q93hwfp7jqmwsfhh8jpz09h6`

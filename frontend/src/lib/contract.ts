@@ -3,7 +3,7 @@ import { testnetBradbury } from 'genlayer-js/chains';
 
 // ─── Deployed contract address (update after Studio deployment) ───────────────
 export const CONTRACT_ADDRESS =
-  '0x0000000000000000000000000000000000000000' as const;
+  '0xe233eFD3080e14773D61C65A5faeA475A50741E8' as const;
 
 export const EXPLORER_URL = 'https://explorer-bradbury.genlayer.com';
 export const FAUCET_URL   = 'https://testnet-faucet.genlayer.foundation/';
