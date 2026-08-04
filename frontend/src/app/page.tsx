@@ -767,39 +767,57 @@ export default function HomePage() {
           {/* Hero */}
           <div className="hero-banner">
             <div>
-              <div className="hero-label">⬡ GenLayer Consensus Arbitration</div>
-              <h1 className="hero-title">Smart Escrow with AI Verdict Enforcement</h1>
+              <div className="hero-eyebrow">GenLayer Consensus Arbitration</div>
+              <h1 className="hero-title">Smart Escrow with <em>AI Verdict</em> Enforcement</h1>
               <p className="hero-body">
-                Lock funds in a cryptographic contract. Submit deliverables against agreed terms.
-                When parties disagree, GenLayer validators convene an impartial AI panel that renders
-                a binding financial verdict — automatically disbursed with no intermediary.
+                Lock funds in a cryptographic contract. When parties disagree, GenLayer's
+                multi-validator AI panel evaluates all evidence and renders a <strong style={{ color: 'var(--gold-200)', fontWeight: 500 }}>binding financial verdict</strong> — automatically
+                disbursed on-chain with zero intermediary.
               </p>
             </div>
             <div className="hero-icon">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 3v18"/><path d="m8 7-4 8a5 5 0 0 0 8 0"/><path d="m16 7 4 8a5 5 0 0 1-8 0"/>
                 <path d="M3 7h18"/>
               </svg>
             </div>
           </div>
 
+          {/* How it works */}
+          <div className="how-strip">
+            {[
+              { n: '01', title: 'Lock Funds',   body: 'Client opens a case and locks GEN tokens in escrow against agreed terms.' },
+              { n: '02', title: 'Deliver Work',  body: 'Contractor submits a deliverable reference. Client reviews and can ratify instantly.' },
+              { n: '03', title: 'Contest',       body: 'Either party may open a dispute with a sworn statement and counter-rebuttal.' },
+              { n: '04', title: 'AI Verdict',    body: 'GenLayer validators reach consensus on AWARD, REFUND, or DIVIDE. Funds disburse automatically.' },
+            ].map((s, i, arr) => (
+              <div key={s.n} className="how-step" style={{ borderBottom: 'none' }}>
+                <span className="how-step-num">Step {s.n}</span>
+                <div className="how-step-title">{s.title}</div>
+                <div className="how-step-body">{s.body}</div>
+                {i < arr.length - 1 && <div className="how-step-arrow">›</div>}
+              </div>
+            ))}
+          </div>
+
           {/* Guideline */}
           <div className="guide-banner">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--slate-500)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--slate-600)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}>
               <circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>
             </svg>
             <div>
               <div className="guide-body">
-                Verdix runs on GenLayer Bradbury testnet. Acquire test GEN from the faucet, then open a case.
-                Arbitration invokes a heavy consensus prompt — the panel may take a few minutes to reach agreement.
+                Running on GenLayer Bradbury testnet · Contract{' '}
+                <a href={`${EXPLORER_URL}/address/0xe233eFD3080e14773D61C65A5faeA475A50741E8`}
+                  target="_blank" rel="noreferrer" className="guide-link" style={{ display: 'inline-flex' }}>
+                  0xe233…741E8 ↗
+                </a>
+                {' '}· Panel arbitration takes a few minutes to reach validator consensus.
               </div>
               <div className="guide-links">
-                <a className="guide-link" href={FAUCET_URL} target="_blank" rel="noreferrer">
-                  Testnet Faucet ↗
-                </a>
-                <a className="guide-link" href="https://explorer-bradbury.genlayer.com" target="_blank" rel="noreferrer">
-                  Bradbury Explorer ↗
-                </a>
+                <a className="guide-link" href={FAUCET_URL} target="_blank" rel="noreferrer">Get Test GEN ↗</a>
+                <a className="guide-link" href={`${EXPLORER_URL}`} target="_blank" rel="noreferrer">Explorer ↗</a>
+                <a className="guide-link" href="https://github.com/k-beee/verdix" target="_blank" rel="noreferrer">GitHub ↗</a>
               </div>
             </div>
           </div>

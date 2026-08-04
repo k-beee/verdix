@@ -330,7 +330,7 @@ MIT — see [LICENSE](LICENSE)
 
 ## 🔗 Links
 
-- **Live App:** [verdix.vercel.app](https://verdix.vercel.app) *(update after deployment)*
+- **Live App:** [verdix-xi.vercel.app](https://verdix-xi.vercel.app)
 - **GenLayer Explorer:** [explorer-bradbury.genlayer.com](https://explorer-bradbury.genlayer.com)
 - **Faucet:** [testnet-faucet.genlayer.foundation](https://testnet-faucet.genlayer.foundation/)
 - **GenLayer Docs:** [docs.genlayer.com](https://docs.genlayer.com)
