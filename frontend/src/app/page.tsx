@@ -739,7 +739,19 @@ export default function HomePage() {
                   <div className="case-meta">
                     <span className="case-meta-item">◈ {formatGEN(c.locked)} GEN</span>
                     <span className="case-meta-item">⬡ {fmt(c.client)}</span>
-                    <span className="case-meta-item">↗ {tsLabel(c.deadline)}</span>
+                    <span className="case-meta-item" style={{
+                      color: c.deadline && c.deadline < Math.floor(Date.now() / 1000) && !['AWARDED','SETTLED','DIVIDED'].includes(c.status)
+                        ? 'var(--rose)' : undefined
+                    }}>
+                      ↗ {c.deadline ? (
+                        (() => {
+                          const secs = c.deadline - Math.floor(Date.now() / 1000)
+                          if (secs < 0) return `Overdue ${Math.round(-secs/86400)}d`
+                          if (secs < 86400) return `Due in ${Math.round(secs/3600)}h`
+                          return `Due in ${Math.round(secs/86400)}d`
+                        })()
+                      ) : '—'}
+                    </span>
                   </div>
                 </div>
               ))}
