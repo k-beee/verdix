@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   CaseStatus, CourtDocket, PanelDraft, VerdixCase,
   EXPLORER_URL, FAUCET_URL, LIMITS,
-  contestDeliveryTx, fetchCase, fetchCases, fetchDocket,
+  contestDeliveryTx, fetchCase, fetchCases, fetchCasesByParty, fetchDocket,
   fileRebuttalTx, invokePanelTx, labelStatus, makeSignerClient,
   openCaseTx, pollTransaction, ratifyDeliveryTx, submitDeliverableTx,
 } from '@/lib/contract'
@@ -557,7 +557,7 @@ function CaseWorkspace({ caseData, account, signerClient, onRefresh }: {
 }
 
 // ─── Main page ────────────────────────────────────────────────────────────────
-const ALL_FILTERS = ['ALL', 'ACTIVE', 'DELIVERED', 'CONTESTED', 'RESOLVED'] as const
+const ALL_FILTERS = ['ALL', 'ACTIVE', 'DELIVERED', 'CONTESTED', 'RESOLVED', 'MY CASES'] as const
 type Filter = typeof ALL_FILTERS[number]
 
 export default function HomePage() {
@@ -583,6 +583,14 @@ export default function HomePage() {
 
   useEffect(() => { loadData() }, [loadData])
 
+  // When filter switches to MY CASES, load wallet-specific cases
+  const [myCases, setMyCases] = useState<VerdixCase[]>([])
+  useEffect(() => {
+    if (filter === 'MY CASES' && account) {
+      fetchCasesByParty(account, 0, 30).then(setMyCases).catch(() => {})
+    }
+  }, [filter, account])
+
   // Auto-refresh selected case
   const refreshSelected = useCallback(async () => {
     await loadData()
@@ -594,11 +602,13 @@ export default function HomePage() {
     }
   }, [loadData, selected])
 
-  const filteredCases = cases.filter(c => {
-    if (filter === 'ALL')      return true
-    if (filter === 'RESOLVED') return ['AWARDED', 'SETTLED', 'DIVIDED'].includes(c.status)
-    return c.status === filter
-  })
+  const filteredCases = filter === 'MY CASES'
+    ? myCases
+    : cases.filter(c => {
+        if (filter === 'ALL')      return true
+        if (filter === 'RESOLVED') return ['AWARDED', 'SETTLED', 'DIVIDED'].includes(c.status)
+        return c.status === filter
+      })
 
   return (
     <div className="page-root">

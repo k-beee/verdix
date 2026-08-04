@@ -152,6 +152,13 @@ export async function fetchCases(start = 0, limit = 12): Promise<VerdixCase[]> {
   return ((normalise(raw) as unknown[]) ?? []).map(asCase);
 }
 
+export async function fetchCasesByParty(party: string, start = 0, limit = 20): Promise<VerdixCase[]> {
+  const raw = await withRetry(() =>
+    readClient.readContract({ address: ADDR, functionName: 'get_cases_by_party', args: [party, start, limit] })
+  );
+  return ((normalise(raw) as unknown[]) ?? []).map(asCase);
+}
+
 export async function fetchCase(id: string): Promise<VerdixCase> {
   const raw = await withRetry(() =>
     readClient.readContract({ address: ADDR, functionName: 'get_case', args: [id] })
