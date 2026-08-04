@@ -665,6 +665,32 @@ Respond with ONLY valid JSON matching this exact schema:
         return results
 
     @gl.public.view
+    def get_cases_by_party(self, party_address: str, start: u256, limit: u256) -> list:
+        """
+        Return paginated cases where the given address is either client
+        or contractor, in reverse-chronological order.
+
+        This view powers the "My Cases" filtered view in the frontend —
+        a user can connect their wallet and immediately see all cases
+        they are party to without scanning the full registry client-side.
+        Because this iterates the full case_index, it is bounded by
+        `limit` to avoid excessive compute on large registries.
+        """
+        party      = str(party_address).lower().strip()
+        page_limit = int(limit) if int(limit) > 0 else 10
+        total      = len(self.case_index)
+        cursor     = total - 1 - int(start)
+        results    = []
+
+        while cursor >= 0 and len(results) < page_limit:
+            record = json.loads(self.registry[self.case_index[cursor]])
+            if record["client"].lower() == party or record["contractor"].lower() == party:
+                results.append(record)
+            cursor -= 1
+
+        return results
+
+    @gl.public.view
     def get_docket(self) -> dict:
         """
         Return high-level court statistics for the dashboard header.
