@@ -178,6 +178,13 @@ export async function fetchDocket(): Promise<CourtDocket> {
   };
 }
 
+export async function fetchActiveDisputes(limit = 5): Promise<VerdixCase[]> {
+  const raw = await withRetry(() =>
+    readClient.readContract({ address: ADDR, functionName: 'get_active_disputes', args: [limit] })
+  );
+  return ((normalise(raw) as unknown[]) ?? []).map(asCase);
+}
+
 // ─── Write functions ──────────────────────────────────────────────────────────
 export const openCaseTx = (
   client: SignerClient,
