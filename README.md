@@ -131,11 +131,13 @@ ACTIVE → DELIVERED → AWARDED
 
 **Public view methods:**
 
-| Method        | Returns             | Description                           |
-|---------------|---------------------|---------------------------------------|
-| `get_case`    | `dict`              | Full case record by ID                |
-| `get_cases`   | `list`              | Paginated case list, newest-first     |
-| `get_docket`  | `dict`              | Court statistics for dashboard        |
+| Method                  | Returns             | Description                                      |
+|-------------------------|---------------------|--------------------------------------------------|
+| `get_case`              | `dict`              | Full case record by ID                            |
+| `get_cases`             | `list`              | Paginated case list, newest-first                 |
+| `get_cases_by_party`    | `list`              | Cases filtered by client/contractor wallet address |
+| `get_active_disputes`   | `list`              | Most recent CONTESTED cases (dashboard widget)    |
+| `get_docket`            | `dict`              | Court statistics (total/disputes/resolved)        |
 
 ---
 
