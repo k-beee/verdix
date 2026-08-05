@@ -11,7 +11,7 @@ To execute:
 """
 
 from gltest import get_contract_factory, create_account
-from gltest.assertions import tx_execution_succeeded
+from gltest.assertions import tx_execution_succeeded, tx_execution_failed
 import json
 
 
@@ -172,8 +172,7 @@ def test_panel_arbitration_flow():
     assert case4["counter_statement"] != ""
 
     # ── Step 5: Panel invoked ─────────────────────────────────────────────────
-    rc5 = contract.arbitrate_dispute if hasattr(contract, "arbitrate_dispute") else contract.invoke_panel
-    rc5 = contract.invoke_panel(
+    rc5 = contract.connect(client).invoke_panel(
         args=["VX-00000", now + 7200]
     ).transact()
 
@@ -197,3 +196,85 @@ def test_panel_arbitration_flow():
     assert int(docket["open_disputes"]) == 0
 
     print(f"[PASS] Docket: {docket}")
+
+
+def test_unauthorized_invoke_panel_fails():
+    """
+    Verification that an unauthorized third party fails to invoke the panel.
+    """
+    factory  = get_contract_factory("VerdixCourt")
+    contract = factory.deploy(args=[])
+
+    client      = create_account()
+    contractor  = create_account()
+    third_party = create_account()
+
+    due = 1720100000
+    now = 1720000000
+
+    # client opens case
+    contract.connect(client).open_case(
+        args=[contractor.address, "Brand Identity Package", "Must deliver full SVG guidelines.", due, now],
+        value=1_000_000_000_000_000_000,
+    ).transact()
+
+    # contractor submits
+    contract.connect(contractor).submit_deliverable(
+        args=["VX-00000", "Figma file links here."],
+    ).transact()
+
+    # client contests
+    contract.connect(client).contest_delivery(
+        args=["VX-00000", "Missing brand guidelines PDF.", now + 3600],
+    ).transact()
+
+    # contractor rebuts
+    contract.connect(contractor).file_rebuttal(
+        args=["VX-00000", "Zeplin upload was emailed."],
+    ).transact()
+
+    # unauthorized party tries to convene panel -> must fail
+    rc_fail = contract.connect(third_party).invoke_panel(
+        args=["VX-00000", now + 7200]
+    ).transact()
+
+    assert tx_execution_failed(rc_fail), "Unauthorized third party should fail to invoke the panel"
+    print("[PASS] Unauthorized panel invocation successfully rejected")
+
+
+def test_premature_invoke_panel_fails():
+    """
+    Verification that calling invoke_panel prematurely (before rebuttal is ready) fails.
+    """
+    factory  = get_contract_factory("VerdixCourt")
+    contract = factory.deploy(args=[])
+
+    client     = create_account()
+    contractor = create_account()
+
+    due = 1720100000
+    now = 1720000000
+
+    # client opens case
+    contract.connect(client).open_case(
+        args=[contractor.address, "Brand Identity Package", "Must deliver full SVG guidelines.", due, now],
+        value=1_000_000_000_000_000_000,
+    ).transact()
+
+    # contractor submits
+    contract.connect(contractor).submit_deliverable(
+        args=["VX-00000", "Figma file links here."],
+    ).transact()
+
+    # client contests
+    contract.connect(client).contest_delivery(
+        args=["VX-00000", "Missing brand guidelines PDF.", now + 3600],
+    ).transact()
+
+    # contractor has NOT rebutted yet — try to invoke panel prematurely -> must fail
+    rc_fail = contract.connect(client).invoke_panel(
+        args=["VX-00000", now + 7200]
+    ).transact()
+
+    assert tx_execution_failed(rc_fail), "Premature panel invocation before rebuttal is ready should fail"
+    print("[PASS] Premature panel invocation successfully rejected")

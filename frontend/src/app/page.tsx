@@ -12,6 +12,7 @@ import {
 // ─── Wallet hook — MetaMask first, private-key fallback ───────────────────────
 function useWallet() {
   const [account, setAccount]           = useState<`0x${string}` | null>(null)
+  const [localAccount, setLocalAccount] = useState<any>(null)
   const [showPkModal, setShowPkModal]   = useState(false)
 
   const connectMetaMask = useCallback(async (): Promise<boolean> => {
@@ -19,18 +20,23 @@ function useWallet() {
     if (!eth) return false
     try {
       const accounts = await eth.request({ method: 'eth_requestAccounts' })
-      if (accounts[0]) { setAccount(accounts[0] as `0x${string}`); return true }
+      if (accounts[0]) {
+        setAccount(accounts[0] as `0x${string}`)
+        setLocalAccount(null)
+        return true
+      }
     } catch { /* user rejected */ }
     return false
   }, [])
 
   const connectWithKey = useCallback((pk: string) => {
     try {
-      // derive address from private key via genlayer-js createAccount
+      // derive address and signing account from private key via genlayer-js createAccount
       import('genlayer-js').then(({ createAccount }) => {
         const normalized = pk.startsWith('0x') ? pk : `0x${pk}`
         const acc = createAccount(normalized as `0x${string}`)
         setAccount(acc.address as `0x${string}`)
+        setLocalAccount(acc)
         setShowPkModal(false)
       })
     } catch {
@@ -44,12 +50,20 @@ function useWallet() {
     if (!ok) setShowPkModal(true)   // no MetaMask — show key modal
   }, [connectMetaMask])
 
-  const disconnect = useCallback(() => setAccount(null), [])
+  const disconnect = useCallback(() => {
+    setAccount(null)
+    setLocalAccount(null)
+  }, [])
 
   return {
     account, connect, disconnect,
     showPkModal, setShowPkModal, connectWithKey,
-    signerClient: account ? makeSignerClient(account) : null,
+    signerClient: account
+      ? makeSignerClient(
+          localAccount || account,
+          localAccount ? undefined : (typeof window !== 'undefined' ? (window as any).ethereum : undefined)
+        )
+      : null,
   }
 }
 

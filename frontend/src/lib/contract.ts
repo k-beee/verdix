@@ -12,8 +12,12 @@ export const FAUCET_URL   = 'https://testnet-faucet.genlayer.foundation/';
 export const readClient = createClient({ chain: testnetBradbury });
 
 // Factory for a write-capable client once the user connects a wallet
-export const makeSignerClient = (account: `0x${string}`) =>
-  createClient({ chain: testnetBradbury, account });
+export const makeSignerClient = (account: `0x${string}` | any, provider?: any) =>
+  createClient({
+    chain: testnetBradbury,
+    account,
+    provider,
+  });
 
 export type SignerClient = ReturnType<typeof makeSignerClient>;
 

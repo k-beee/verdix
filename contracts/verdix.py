@@ -430,6 +430,19 @@ class VerdixCourt(gl.Contract):
                 f"{ERR_INPUT} The panel can only be invoked on a CONTESTED case"
             )
 
+        # Enforce authorization: only case parties may convene the panel
+        sender = gl.message.sender_address.as_hex
+        if sender not in (record["client"], record["contractor"]):
+            raise gl.vm.UserError(
+                f"{ERR_INPUT} Only parties to this case may invoke the panel"
+            )
+
+        # Enforce rebuttal ready: both statements must be recorded before arbitration
+        if not record["client_statement"] or not record["counter_statement"]:
+            raise gl.vm.UserError(
+                f"{ERR_INPUT} Both parties must submit statements before invoking the panel"
+            )
+
         # Execute the GenVM consensus arbitration
         verdict_data = self._run_panel(
             record["title"],
