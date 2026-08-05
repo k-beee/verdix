@@ -12,7 +12,7 @@ import { testnetBradbury } from 'genlayer-js/chains';
 
 // ── Config ────────────────────────────────────────────────────────────────────
 const PRIVATE_KEY       = '0x865c6773bcd46f894a56092ca318c2d4931d49ed8e60ddc4c8a709b67683e699';
-const CONTRACT_ADDRESS  = '0xe233eFD3080e14773D61C65A5faeA475A50741E8';
+const CONTRACT_ADDRESS  = '0xA1A7C6496A1f9A7af43851aEc1B6dC8Cd1200efb';
 const EXPLORER          = 'https://explorer-bradbury.genlayer.com';
 const ONE_GEN           = BigInt('1000000000000000000');
 
